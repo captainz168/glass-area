@@ -97,6 +97,11 @@ details.card[open] summary::after{content:"−"}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);max-width:calc(100% - 32px);padding:10px 16px;border-radius:6px;background:var(--fg);color:var(--bg);font-size:13.5px;z-index:20;opacity:0;pointer-events:none;transition:opacity .2s}
 .toast.show{opacity:1}
 dialog{border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--fg);padding:18px;width:min(560px,calc(100% - 32px))}
+#matDlg{width:min(900px,calc(100% - 32px))}
+#matDlg table{min-width:760px}
+#matDlg td:nth-child(1) input{width:80px}
+#matDlg td:nth-child(2){width:100%}
+#matDlg td:nth-child(2) input{min-width:220px}
 dialog::backdrop{background:rgba(0,0,0,.45)}
 dialog h2{margin:0 0 6px;font-size:16px}
 dialog table input{width:100%;min-height:36px;padding:0 8px;border:1px solid var(--line);border-radius:5px;background:var(--panel)}
@@ -1257,7 +1262,8 @@ const MAT_DEFAULT=[
   {code:'ST',name:'หิน / granite',color:'#7A6448',unit:'area',sys:false},
   {code:'LV',name:'Louver / ระแนง',color:'#5E8A2E',unit:'area',sys:false},
   {code:'MU',name:'Mullion (โครงตั้ง)',color:'#C23B7A',unit:'line',sys:false},
-  {code:'TR',name:'Transom (โครงนอน)',color:'#8E44AD',unit:'line',sys:false}];
+  {code:'TR',name:'Transom (โครงนอน)',color:'#8E44AD',unit:'line',sys:false},
+  {code:'BL',name:'Balustrade / ราวกันตก (ความยาวตามแนวราว)',color:'#8C9096',unit:'line',sys:false}];
 const curMat=()=>S.materials[S.matIdx]||S.materials[0]||MAT_DEFAULT[0];
 const matBy=c=>S.materials.find(m=>m.code===c)||{code:c||'?',name:c||'?',color:'#8A8F98',unit:'area',sys:false};
 const UNIT_TXT={area:'ตร.ม.',length:'ม.',line:'ม.'};
@@ -1526,7 +1532,7 @@ function renderMat(){
 }
 let matDraft=[];
 function renderMatRows(){
-  $('matRows').innerHTML=matDraft.map((m,i)=>'<tr><td><input id="mc'+i+'" data-i="'+i+'" data-k="code" value="'+esc(m.code)+'" aria-label="รหัส" style="width:70px"></td><td><input id="mn'+i+'" data-i="'+i+'" data-k="name" value="'+esc(m.name)+'" aria-label="ชื่อ"></td><td><input id="mk'+i+'" data-i="'+i+'" data-k="color" type="color" value="'+esc(m.color)+'" aria-label="สี" style="width:44px;padding:2px"></td><td><select id="mu'+i+'" data-i="'+i+'" data-k="unit" aria-label="หน่วย" style="min-height:36px;border:1px solid var(--line);border-radius:5px;background:var(--panel)">'+Object.entries(UNIT_NAME).map(([k,v])=>'<option value="'+k+'"'+(m.unit===k?' selected':'')+'>'+v+'</option>').join('')+'</select></td><td style="text-align:center"><input id="ms'+i+'" data-i="'+i+'" data-k="sys" type="checkbox"'+(m.sys?' checked':'')+' aria-label="ใช้ระบบกรอบ" style="width:auto;min-height:0"></td><td><input id="mf'+i+'" data-i="'+i+'" data-k="fold" type="number" min="0" step="1" value="'+(+m.fold||0)+'" aria-label="ขอบพับต่อด้าน" class="num" style="width:80px"></td><td>'+(matDraft.length>1?'<button class="btn ghost" data-mdel="'+i+'">ลบ</button>':'')+'</td></tr>').join('');
+  $('matRows').innerHTML=matDraft.map((m,i)=>'<tr><td><input id="mc'+i+'" data-i="'+i+'" data-k="code" value="'+esc(m.code)+'" aria-label="รหัส"></td><td><input id="mn'+i+'" data-i="'+i+'" data-k="name" value="'+esc(m.name)+'" aria-label="ชื่อ" title="'+esc(m.name)+'"></td><td><input id="mk'+i+'" data-i="'+i+'" data-k="color" type="color" value="'+esc(m.color)+'" aria-label="สี" style="width:44px;padding:2px"></td><td><select id="mu'+i+'" data-i="'+i+'" data-k="unit" aria-label="หน่วย" style="min-height:36px;border:1px solid var(--line);border-radius:5px;background:var(--panel)">'+Object.entries(UNIT_NAME).map(([k,v])=>'<option value="'+k+'"'+(m.unit===k?' selected':'')+'>'+v+'</option>').join('')+'</select></td><td style="text-align:center"><input id="ms'+i+'" data-i="'+i+'" data-k="sys" type="checkbox"'+(m.sys?' checked':'')+' aria-label="ใช้ระบบกรอบ" style="width:auto;min-height:0"></td><td><input id="mf'+i+'" data-i="'+i+'" data-k="fold" type="number" min="0" step="1" value="'+(+m.fold||0)+'" aria-label="ขอบพับต่อด้าน" class="num" style="width:80px"></td><td>'+(matDraft.length>1?'<button class="btn ghost" data-mdel="'+i+'">ลบ</button>':'')+'</td></tr>').join('');
 }
 $('matEdit').onclick=()=>{matDraft=S.materials.map(m=>({...m}));renderMatRows();$('matDlg').showModal()};
 $('matRows').addEventListener('input',e=>{const i=e.target.dataset.i,k=e.target.dataset.k;if(i==null)return;matDraft[i][k]=k==='sys'?e.target.checked:e.target.value});
