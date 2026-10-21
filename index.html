@@ -97,8 +97,8 @@ details.card[open] summary::after{content:"−"}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);max-width:calc(100% - 32px);padding:10px 16px;border-radius:6px;background:var(--fg);color:var(--bg);font-size:13.5px;z-index:20;opacity:0;pointer-events:none;transition:opacity .2s}
 .toast.show{opacity:1}
 dialog{border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--fg);padding:18px;width:min(560px,calc(100% - 32px))}
-#matDlg{width:min(900px,calc(100% - 32px))}
-#matDlg table{min-width:760px}
+#matDlg{width:min(1000px,calc(100% - 32px))}
+#matDlg table{min-width:860px}
 #matDlg td:nth-child(1) input{width:80px}
 #matDlg td:nth-child(2){width:100%}
 #matDlg td:nth-child(2) input{min-width:220px}
@@ -115,7 +115,7 @@ dialog td{border:0;padding:4px}
 <header class="top">
   <div class="brand">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="1"></rect><path d="M12 3v18M3 9h18"></path></svg>
-    วัดพื้นที่กระจก <span class="muted small num" title="เวอร์ชัน">v1.5 · 21/10/2026</span>
+    วัดพื้นที่กระจก <span class="muted small num" title="เวอร์ชัน">v1.7 · 21/10/2026</span>
   </div>
   <div class="seg tabs" role="group" aria-label="โหมด">
     <button id="tabElev" aria-pressed="true">รูปด้าน (แผงกระจก)</button>
@@ -145,6 +145,7 @@ dialog td{border:0;padding:4px}
     <div class="tools" id="toolsElev">
       <button class="btn" id="minusBtn" aria-pressed="false">− โหมดหักช่องเปิด</button>
       <button class="btn" id="clearSel">ล้างที่เลือก</button>
+      <label class="inline"><input type="checkbox" id="showText" checked> แสดงตัวหนังสือ</label>
       <button class="btn" id="exportPng" title="บันทึกภาพแบบในจอพร้อมรหัสแผ่น">ส่งออกภาพ</button>
       <label class="inline"><input type="checkbox" id="skipOuter" checked> ลากกรอบแล้วข้ามรูปที่ครอบรูปอื่น</label>
       <label class="inline" title="เช่น มือจับ อุปกรณ์ ที่อยู่ลอย ๆ ในแผ่น"><input type="checkbox" id="subIsl" checked> หักรูปที่ลอยอยู่ในแผ่น (มือจับ ฯลฯ)</label>
@@ -265,6 +266,7 @@ dialog td{border:0;padding:4px}
         <button class="btn" id="projCsv">ดาวน์โหลด CSV</button>
         <button class="btn" id="projSave">บันทึกโครงการ</button>
         <label class="btn" for="projOpen">เปิดโครงการ</label><input type="file" id="projOpen" accept=".json,application/json" hidden>
+        <button class="btn primary" id="projSum2">สรุปทั้งโครงการ</button>
         <button class="btn ghost" id="projClear">ล้างรายการ</button>
       </div>
       <p class="note">กด "คัดลอก" แล้ววางใน Google Sheets หรือ Excel ได้ทันที</p>
@@ -282,12 +284,19 @@ dialog td{border:0;padding:4px}
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<dialog id="sumDlg" aria-labelledby="sumTitle" style="width:min(1000px,calc(100% - 32px))">
+  <h2 id="sumTitle">สรุปทั้งโครงการ</h2>
+  <p class="note">แผ่นขนาดเดียวกันจากทุกผนังรวมเป็นรหัสเดียว (ใช้ค่า "รวมขนาดต่างกันไม่เกิน") รหัสโครงการไม่ขึ้นกับรหัสในแต่ละผนัง</p>
+  <div class="tbl" id="sumTable" style="max-height:60vh"></div>
+  <div class="dlg-actions"><button class="btn" id="sumCopy">คัดลอก</button><button class="btn primary" id="sumClose">ปิด</button></div>
+</dialog>
+
 <dialog id="matDlg" aria-labelledby="matTitle">
   <h2 id="matTitle">วัสดุ</h2>
-  <p class="note">รหัสใช้เป็นตัวนำของรหัสแผ่น เช่น ACP-1 · "เมตร (ด้านยาว)" คิดความยาวด้านยาวของแต่ละชิ้น เช่น แท่ง baguette · "เมตรวิ่ง (คลิกเส้น)" คลิกเลือกเส้นโครงทีละเส้น เช่น mullion · "ใช้ระบบกรอบ" = ปรับขนาดตามระบบกรอบที่เลือก · "ขอบพับ/ด้าน" = ระยะพับขอบแต่ละด้าน ใช้คำนวณขนาดแผ่นคลี่ (0 = ไม่พับ)</p>
+  <p class="note">รหัสใช้เป็นตัวนำของรหัสแผ่น เช่น ACP-1 · "เมตร (ด้านยาว)" คิดความยาวด้านยาวของแต่ละชิ้น เช่น แท่ง baguette · "เมตรวิ่ง (คลิกเส้น)" คลิกเลือกเส้นโครงทีละเส้น เช่น mullion · "ใช้ระบบกรอบ" = ปรับขนาดตามระบบกรอบที่เลือก · "ขอบพับ/ด้าน" = ระยะพับขอบแต่ละด้าน ใช้คำนวณขนาดแผ่นคลี่ (0 = ไม่พับ) · "เผื่อเศษ" = % ที่บวกเพิ่มเป็นยอดสั่งซื้อ ใส่ค่าที่บริษัทใช้จริง</p>
   <div style="overflow-x:auto">
     <table>
-      <thead><tr><th>รหัส</th><th>ชื่อ</th><th>สี</th><th>หน่วย</th><th>ระบบกรอบ</th><th>ขอบพับ/ด้าน (มม.)</th><th></th></tr></thead>
+      <thead><tr><th>รหัส</th><th>ชื่อ</th><th>สี</th><th>หน่วย</th><th>ระบบกรอบ</th><th>ขอบพับ/ด้าน (มม.)</th><th>เผื่อเศษ (%)</th><th></th></tr></thead>
       <tbody id="matRows"></tbody>
     </table>
   </div>
@@ -539,6 +548,9 @@ function toShapes(rec,m,layer0,depth,out,doc){
   } else if(T==='SPLINE'){
     const pts=splinePts(rec); if(!pts)return;
     push(pts,(gn(rec,70,0)&1)===1,'SPLINE');
+  } else if(T==='TEXT'||T==='MTEXT'||T==='ATTRIB'){
+    let t='';for(const [c,v] of rec.g)if(c===3)t+=v;t+=gs(rec,1);
+    pushText(t,gn(rec,10,0),gn(rec,20,0),gn(rec,40,0),gn(rec,50,0)*(T==='MTEXT'?1:Math.PI/180),layer,mul(m,ocs(rec)));
   } else if(T==='INSERT'&&depth<10){
     const B=doc.blocks[gs(rec,2)]; if(!B)return;
     const ix=gn(rec,10,0),iy=gn(rec,20,0),sx=gn(rec,41,1),sy=gn(rec,42,1),ra=gn(rec,50,0)*Math.PI/180;
@@ -581,6 +593,16 @@ function applyM(sh,m){
   sh.pts=pts.map(p=>({x:m[0]*p.x+m[2]*p.y+m[4],y:m[1]*p.x+m[3]*p.y+m[5],b:p.b*sg}));
   if(sh.kind==='CIRCLE'&&sh.closed&&!sim) sh.kind='ELLIPSE';
   return sh;
+}
+
+
+/* ---------- ตัวหนังสือในแบบ ---------- */
+let TXT=[];
+const cleanMText=t=>String(t||'').replace(/\\P/g,' ').replace(/\\[A-Za-z][^;\\{}]*;/g,'').replace(/\\[~ ]/g,' ').replace(/\\\\/g,'\\').replace(/[{}]/g,'').replace(/%%[cC]/g,'Ø').replace(/%%[dD]/g,'°').replace(/%%[pP]/g,'±').trim();
+function pushText(t,x,y,h,rot,layer,m){
+  t=cleanMText(t);if(!t||!(h>0))return;
+  const k=Math.sqrt(Math.abs(m[0]*m[3]-m[1]*m[2]))||1;
+  TXT.push({t:t.length>80?t.slice(0,80)+'…':t,x:m[0]*x+m[2]*y+m[4],y:m[1]*x+m[3]*y+m[5],h:h*k,r:(rot||0)+Math.atan2(m[1],m[0]),layer});
 }
 
 /* ================= เรขาคณิต ================= */
@@ -646,6 +668,7 @@ function loadDoc(text,name){
   let doc;
   try{doc=parseDXF(text)}catch(e){toast('อ่านไฟล์ไม่ได้: '+e.message);return false}
   const shapes=[];
+  TXT=[];
   for(const e of doc.ents) toShapes(e,I,null,0,shapes,doc);
   return finishLoad(shapes,doc.layerColor,{},parseInt(doc.header.$INSUNITS,10),name);
 }
@@ -653,6 +676,7 @@ function loadDoc(text,name){
 function finishLoad(shapes,layerColor,layerOff,insunits,name){
   if(!shapes.length){toast('ไม่พบเส้นที่วัดได้ในไฟล์นี้ (อ่านได้: LINE, ARC, CIRCLE, POLYLINE, ELLIPSE, SPLINE, INSERT)');return false}
   const doc={layerColor,header:{$INSUNITS:insunits}};
+  S.texts=TXT;TXT=[];
   S.bg=null;S.pdf=null;$('pageLab').hidden=true;$('unitCustom').hidden=true;if($('unit').value==='custom'){$('unit').value='1';S.unitF=1}$('scaleInfo').textContent='';if(S.tool)setTool(null);
   const lay={};
   for(const sh of shapes){
@@ -712,7 +736,7 @@ async function openImage(f){
 }
 function setRaster(img,name){
   S.bg={img,w:img.width,h:img.height};
-  S.shapes=[];S.layers={'วาดเอง':5};S.layerOn={'วาดเอง':true};S.bb=[0,0,img.width,img.height];
+  S.texts=[];S.shapes=[];S.layers={'วาดเอง':5};S.layerOn={'วาดเอง':true};S.bb=[0,0,img.width,img.height];
   S.sel=[];S.wall=[];S.undo=[];S.dims=[];renderDims();S.scaled=false;S.customF=1;
   $('unitCustom').hidden=false;$('unitCustom').textContent='ตามสเกลที่ตั้ง (ยังไม่ได้ตั้ง)';$('unit').value='custom';S.unitF=1;
   $('scaleInfo').textContent='ยังไม่ได้ตั้งสเกล';
@@ -900,7 +924,10 @@ function dwgEnt(e,m,layer0,depth,out,B){
       for(const p of e.fitPoints||[])g.push([11,p.x],[21,p.y]);
       const pts=splinePts({g:g.map(([c,v])=>[c,String(v)])});
       if(pts)push(pts,(e.flag&1)===1,'SPLINE');break}
+    case 'TEXT':case 'ATTRIB':{const p=e.startPoint||e.insertionPoint||{x:0,y:0};pushText(e.text,p.x,p.y,e.textHeight,e.rotation||0,layer,mul(m,ocsD(e)));break}
+    case 'MTEXT':{const p=e.insertionPoint||{x:0,y:0};pushText(e.text,p.x,p.y,e.textHeight,e.rotation||0,layer,m);break}
     case 'INSERT':{
+      for(const a of e.attribs||[])if(a&&a.text){const p=a.startPoint||a.insertionPoint;if(p)pushText(a.text,p.x,p.y,a.textHeight,a.rotation||0,a.layer||layer,m)}
       if(depth>=10)break;
       const blk=B[e.name];if(!blk||!blk.entities)break;
       const ip=e.insertionPoint||{x:0,y:0},bp=blk.basePoint||{x:0,y:0};
@@ -918,6 +945,7 @@ function dwgShapes(db){
   for(const b of br)B[b.name]=b;
   const ms=br.find(b=>/^\*model_space$/i.test(b.name));
   const ents=ms&&ms.entities&&ms.entities.length?ms.entities:(db.entities||[]).filter(e=>!ms||e.ownerBlockRecordSoftId===ms.handle);
+  TXT=[];
   const out=[];for(const e of ents)dwgEnt(e,I,null,0,out,B);
   const col={},off={};
   for(const l of (db.tables&&db.tables.LAYER&&db.tables.LAYER.entries)||[]){col[l.name]=Math.abs(l.colorIndex||7);if(l.off||l.frozen)off[l.name]=true}
@@ -1005,6 +1033,16 @@ function draw(){
   for(const sh of S.shapes){ if(!S.layerOn[sh.layer]||!hit(sh.bb,vr))continue; const c=colorOf(sh.layer);(byCol[c]||(byCol[c]=new Path2D()));addPath(byCol[c],sh.poly)}
   for(const c in byCol){ctx.strokeStyle=c;ctx.globalAlpha=.85;ctx.stroke(byCol[c])}
   ctx.globalAlpha=1;
+  // ตัวหนังสือ
+  if($('showText').checked&&S.texts&&S.texts.length){
+    const d0=window.devicePixelRatio||1;ctx.save();ctx.setTransform(d0,0,0,d0,0,0);ctx.textAlign='left';ctx.textBaseline='alphabetic';let n=0;
+    for(const t of S.texts){
+      if(n>3000)break;if(S.layerOn[t.layer]===false)continue;
+      const hp=t.h*s;if(hp<5||hp>400)continue;const [X,Y]=w2s(t.x,t.y);if(X<-500||Y<-200||X>S.W+200||Y>S.H+200)continue;
+      ctx.save();ctx.translate(X,Y);ctx.rotate(-t.r);ctx.font=hp.toFixed(1)+'px sans-serif';ctx.fillStyle=colorOf(t.layer);ctx.globalAlpha=.9;ctx.fillText(t.t,0,0);ctx.restore();n++;
+    }
+    ctx.restore();ctx.setTransform(d*s,0,0,-d*s,d*S.view.tx,d*S.view.ty);
+  }
   if(S.mode==='elev'){
     for(const it of S.sel){
       if(it.kind==='line'){const p=new Path2D();addPath(p,it.poly);ctx.strokeStyle=matBy(it.mat).color;ctx.lineWidth=5/s;ctx.lineCap='round';ctx.stroke(p);ctx.lineCap='butt';continue}
@@ -1324,7 +1362,20 @@ function computeElev(){
     rows.push({code,mat:m.code,unit:'area',desc:'หักช่องเปิด ('+m.code+')',w,h,qty:1,area:-q,kind:'minus'});
   });
   let total=0;for(const k in sum)if(sum[k].unit==='area')total+=sum[k].v;
-  elevRes={rows,total,count,freeN,sum,sysUsed,perimTot,flatG,flatN};
+  const wsum=applyWaste(rows);
+  elevRes={rows,total,count,freeN,sum,sysUsed,perimTot,flatG,flatN,wsum};
+}
+
+// ค่าเผื่อเศษ: ปริมาณเผื่อเศษ = ปริมาณ × (1 + %เศษ) คืนข้อความสรุปยอดสั่งต่อวัสดุ
+function applyWaste(rows){
+  const sum={};
+  for(const r of rows){
+    const m=matBy(r.mat),w=Math.max(0,+m.waste||0);
+    r.waste=w;r.qtyW=r.area*(1+w/100);
+    if(w>0){const k=r.mat;(sum[k]||(sum[k]={u:r.unit,v:0,w})).v+=r.qtyW}
+  }
+  const t=Object.entries(sum).map(([k,v])=>k+' '+fmt(v.v,2)+' '+UNIT_TXT[v.u||'area']+' (+'+fmt(v.w,1)+'%)');
+  return t.length?'ยอดสั่ง (เผื่อเศษ): '+t.join(' · '):'';
 }
 function sumText(sum){return Object.entries(sum).map(([k,v])=>k+' '+fmt(v.v,v.unit==='area'?2:2)+' '+UNIT_TXT[v.unit]).join(' · ')}
 function renderElev(){
@@ -1336,6 +1387,7 @@ function renderElev(){
   if(Object.keys(r.sum).length>1||Object.values(r.sum).some(v=>v.unit==='length'))notes.push('แยกตามวัสดุ: '+sumText(r.sum));
   if(r.sysUsed)notes.push('ปรับขนาดตามระบบ "'+sys.name+'" (กว้าง '+sgn(sys.dw)+', สูง '+sgn(sys.dh)+' มม.) เฉพาะวัสดุที่ใช้ระบบกรอบ');
   if(r.perimTot)notes.push('เส้นรอบรูปแผ่นรวม '+fmt(r.perimTot,2)+' ม.');
+  if(r.wsum)notes.push(r.wsum);
   if(r.flatG)notes.push('แผ่นคลี่ (รวมขอบพับ): ขนาดแผ่นเต็ม '+fmt(r.flatG,2)+' ตร.ม. · ใช้จริงหลังบากมุม '+fmt(r.flatN,2)+' ตร.ม.');
   if(r.freeN)notes.push('รูปทรงอิสระคิดพื้นที่จริงตามเส้น ไม่ปรับตามระบบกรอบ');
   if(r.rows.length&&!shapeFocus)notes.push('คลิกรหัสในตารางเพื่อดูความยาวแต่ละด้านและมุม');
@@ -1344,10 +1396,10 @@ function renderElev(){
 }
 const sgn=v=>(v>0?'+':'')+fmt(v,0);
 function tableHTML(rows,plan){
-  let h='<table><thead><tr><th>รหัส</th><th>รายละเอียด</th><th class="r">กว้าง × สูง (มม.)</th><th class="r">จำนวน</th><th class="r">ปริมาณ</th><th class="r" title="เส้นรอบรูปรวมของแถวนี้ ใช้คิดซิลิโคน/ยางขอบ">รอบรูป (ม.)</th></tr></thead><tbody>';
+  let h='<table><thead><tr><th>รหัส</th><th>รายละเอียด</th><th class="r">กว้าง × สูง (มม.)</th><th class="r">จำนวน</th><th class="r">ปริมาณ</th><th class="r" title="เส้นรอบรูปรวมของแถวนี้ ใช้คิดซิลิโคน/ยางขอบ">รอบรูป (ม.)</th><th></th></tr></thead><tbody>';
   for(const r of rows){
     const c=r.kind==='minus'?'':' style="background:'+rgba(matBy(r.mat).color,.16)+';color:var(--fg)"';
-    h+='<tr class="'+(r.kind==='minus'?'minus':r.kind==='free'?'free':'')+'"><td>'+(r.kind==='line'?'<span class="chip"'+c+'>'+esc(r.code)+'</span>':'<button class="chip chipbtn" data-shape="'+esc(r.code)+'" title="ดูความยาวแต่ละด้านและมุม"'+c+'>'+esc(r.code)+'</button>')+'</td><td>'+esc(r.desc)+'</td><td class="r num">'+(r.kind==='line'?'ยาว '+fmt(r.w,0):(r.kind==='free'?'~':'')+fmt(r.w,0)+' × '+fmt(r.h,0))+'</td><td class="r num">'+r.qty+'</td><td class="r num" style="white-space:nowrap">'+fmt(r.area,r.unit==='length'?2:3)+' '+UNIT_TXT[r.unit||'area']+'</td><td class="r num">'+(r.perim?fmt(r.perim,2):'–')+'</td></tr>';
+    h+='<tr class="'+(r.kind==='minus'?'minus':r.kind==='free'?'free':'')+'"><td>'+(r.kind==='line'?'<span class="chip"'+c+'>'+esc(r.code)+'</span>':'<button class="chip chipbtn" data-shape="'+esc(r.code)+'" title="ดูความยาวแต่ละด้านและมุม"'+c+'>'+esc(r.code)+'</button>')+'</td><td>'+esc(r.desc)+'</td><td class="r num">'+(r.kind==='line'?'ยาว '+fmt(r.w,0):(r.kind==='free'?'~':'')+fmt(r.w,0)+' × '+fmt(r.h,0))+'</td><td class="r num">'+r.qty+'</td><td class="r num" style="white-space:nowrap">'+fmt(r.area,r.unit==='length'?2:3)+' '+UNIT_TXT[r.unit||'area']+'</td><td class="r num">'+(r.perim?fmt(r.perim,2):'–')+'</td><td>'+((r.mat==='GL'||r.mat==='SP')&&r.kind!=='minus'&&r.kind!=='line'&&r.h>0?'<a href="'+calcLink(r)+'" target="_blank" rel="noopener" title="เปิดโปรแกรมคำนวณความหนากระจกพร้อมขนาดนี้">ความหนา</a>':'')+'</td></tr>';
   }
   return h+'</tbody></table>';
 }
@@ -1428,7 +1480,8 @@ function computePlan(){
     const d=(g.kind==='straight'?'ช่วงตรง':g.kind==='bent'?'ดัดโค้ง R '+fmt(g.r,0):'ตรงบนโค้ง R '+fmt(g.r,0)+', หักมุม '+fmt(g.ang,2)+'°')+' (ช่วง '+[...g.segs].join(', ')+')';
     return{code:M.code+'-P'+(i+1),mat:M.code,unit:M.unit,desc:M.code+' · '+d,w:g.w,h:g.h,qty:g.qty,area:a,perim:per,kind:g.kind};
   });
-  planRes={rows,total,area,lenSum,perimTot,mat:M,count:pieces.length,ticks,labels,forced:S.div==='count'&&pieces.length>cnt};
+  const wsum=applyWaste(rows);
+  planRes={rows,total,area,lenSum,perimTot,wsum,mat:M,count:pieces.length,ticks,labels,forced:S.div==='count'&&pieces.length>cnt};
 }
 function renderPlan(){
   const r=planRes||{rows:[],total:0,area:0,count:0};
@@ -1439,6 +1492,7 @@ function renderPlan(){
   const sys=sysCur(),n=[];
   if(r.mat&&r.mat.sys&&(sys.dw||sys.dh))n.push('ปรับขนาดตามระบบ "'+sys.name+'" แล้ว');
   if(r.lenSum)n.push(r.mat.code+' ยาวรวม '+fmt(r.lenSum,2)+' ม.');
+  if(r.wsum)n.push(r.wsum);
   if(r.perimTot)n.push('เส้นรอบรูปแผ่นรวม '+fmt(r.perimTot,2)+' ม.');
   if(r.forced)n.push('จำนวนแผ่นเกินที่ตั้ง เพราะทุกช่วงต้องมีอย่างน้อย 1 แผ่น');
   if(r.rows.some(x=>x.kind==='flat'))n.push('กระจกตรงบนช่วงโค้ง กว้างคิดจากระยะคอร์ด หักมุม = มุมระหว่างแผ่นที่ติดกัน');
@@ -1491,7 +1545,7 @@ function addWall(mode){
   if(!res||!res.rows.length){toast('ยังไม่มีแผ่นกระจกที่วัด');return}
   const nm=$(mode==='elev'?'eName':'pName').value.trim()||('ผนัง '+(S.project.length+1));
   const gl=$(mode==='elev'?'eGlass':'pGlass').value.trim();
-  S.project.push({name:nm,glass:gl,sys:sysCur().name,file:S.fileName,mode,rows:res.rows.map(r=>({code:r.code,mat:r.mat,unit:r.unit,perim:r.perim||0,flat:r.flat||null,desc:r.desc,w:r.w,h:r.h,qty:r.qty,area:r.area})),total:mode==='elev'?res.total:res.area});
+  S.project.push({name:nm,glass:gl,sys:sysCur().name,file:S.fileName,mode,rows:res.rows.map(r=>({code:r.code,mat:r.mat,unit:r.unit,perim:r.perim||0,flat:r.flat||null,waste:r.waste||0,qtyW:r.qtyW!=null?r.qtyW:r.area,desc:r.desc,w:r.w,h:r.h,qty:r.qty,area:r.area})),total:mode==='elev'?res.total:res.area});
   save('glassArea.project',S.project);renderProject();toast('เพิ่ม "'+nm+'" ลงรายการแล้ว');
   $(mode==='elev'?'eName':'pName').value='';
 }
@@ -1507,8 +1561,8 @@ $('projClear').onclick=e=>{ // กดสองครั้งเพื่อย�
   if(Date.now()-clearArm<3000){S.project=[];save('glassArea.project',S.project);renderProject();e.target.textContent='ล้างรายการ';toast('ล้างรายการแล้ว')}
   else{clearArm=Date.now();e.target.textContent='กดอีกครั้งเพื่อยืนยัน';setTimeout(()=>e.target.textContent='ล้างรายการ',3000)}
 };
-const HEAD=['ผนัง','ชนิด / สเปก','ระบบกรอบ','วัสดุ','รหัส','รายละเอียด','กว้าง (มม.)','สูง (มม.)','จำนวน','ปริมาณ','หน่วย','เส้นรอบรูปรวม (ม.)','คลี่ กว้าง (มม.)','คลี่ สูง (มม.)','แผ่นคลี่เต็ม (ตร.ม.)','แผ่นคลี่หลังบากมุม (ตร.ม.)'];
-function rowsOf(w){return w.rows.map(r=>[w.name,w.glass,w.sys,r.mat||'GL',r.code,r.desc,r.w.toFixed(1),r.h.toFixed(1),r.qty,r.area.toFixed(3),UNIT_TXT[r.unit||'area'],r.perim?r.perim.toFixed(2):'',r.flat?r.flat.w.toFixed(1):'',r.flat?r.flat.h.toFixed(1):'',r.flat?r.flat.gross.toFixed(3):'',r.flat?r.flat.net.toFixed(3):''])}
+const HEAD=['ผนัง','ชนิด / สเปก','ระบบกรอบ','วัสดุ','รหัส','รายละเอียด','กว้าง (มม.)','สูง (มม.)','จำนวน','ปริมาณ','หน่วย','เส้นรอบรูปรวม (ม.)','คลี่ กว้าง (มม.)','คลี่ สูง (มม.)','แผ่นคลี่เต็ม (ตร.ม.)','แผ่นคลี่หลังบากมุม (ตร.ม.)','เผื่อเศษ (%)','ปริมาณเผื่อเศษ'];
+function rowsOf(w){return w.rows.map(r=>[w.name,w.glass,w.sys,r.mat||'GL',r.code,r.desc,r.w.toFixed(1),r.h.toFixed(1),r.qty,r.area.toFixed(3),UNIT_TXT[r.unit||'area'],r.perim?r.perim.toFixed(2):'',r.flat?r.flat.w.toFixed(1):'',r.flat?r.flat.h.toFixed(1):'',r.flat?r.flat.gross.toFixed(3):'',r.flat?r.flat.net.toFixed(3):'',r.waste||0,(r.qtyW!=null?r.qtyW:r.area).toFixed(3)])}
 function asTSV(lines){return lines.map(l=>l.map(v=>String(v).replace(/[\t\n]/g,' ')).join('\t')).join('\n')}
 async function copyText(t){
   try{await navigator.clipboard.writeText(t);toast('คัดลอกแล้ว วางใน Google Sheets หรือ Excel ได้เลย')}
@@ -1535,7 +1589,7 @@ function renderMat(){
 }
 let matDraft=[];
 function renderMatRows(){
-  $('matRows').innerHTML=matDraft.map((m,i)=>'<tr><td><input id="mc'+i+'" data-i="'+i+'" data-k="code" value="'+esc(m.code)+'" aria-label="รหัส"></td><td><input id="mn'+i+'" data-i="'+i+'" data-k="name" value="'+esc(m.name)+'" aria-label="ชื่อ" title="'+esc(m.name)+'"></td><td><input id="mk'+i+'" data-i="'+i+'" data-k="color" type="color" value="'+esc(m.color)+'" aria-label="สี" style="width:44px;padding:2px"></td><td><select id="mu'+i+'" data-i="'+i+'" data-k="unit" aria-label="หน่วย" style="min-height:36px;border:1px solid var(--line);border-radius:5px;background:var(--panel)">'+Object.entries(UNIT_NAME).map(([k,v])=>'<option value="'+k+'"'+(m.unit===k?' selected':'')+'>'+v+'</option>').join('')+'</select></td><td style="text-align:center"><input id="ms'+i+'" data-i="'+i+'" data-k="sys" type="checkbox"'+(m.sys?' checked':'')+' aria-label="ใช้ระบบกรอบ" style="width:auto;min-height:0"></td><td><input id="mf'+i+'" data-i="'+i+'" data-k="fold" type="number" min="0" step="1" value="'+(+m.fold||0)+'" aria-label="ขอบพับต่อด้าน" class="num" style="width:80px"></td><td>'+(matDraft.length>1?'<button class="btn ghost" data-mdel="'+i+'">ลบ</button>':'')+'</td></tr>').join('');
+  $('matRows').innerHTML=matDraft.map((m,i)=>'<tr><td><input id="mc'+i+'" data-i="'+i+'" data-k="code" value="'+esc(m.code)+'" aria-label="รหัส"></td><td><input id="mn'+i+'" data-i="'+i+'" data-k="name" value="'+esc(m.name)+'" aria-label="ชื่อ" title="'+esc(m.name)+'"></td><td><input id="mk'+i+'" data-i="'+i+'" data-k="color" type="color" value="'+esc(m.color)+'" aria-label="สี" style="width:44px;padding:2px"></td><td><select id="mu'+i+'" data-i="'+i+'" data-k="unit" aria-label="หน่วย" style="min-height:36px;border:1px solid var(--line);border-radius:5px;background:var(--panel)">'+Object.entries(UNIT_NAME).map(([k,v])=>'<option value="'+k+'"'+(m.unit===k?' selected':'')+'>'+v+'</option>').join('')+'</select></td><td style="text-align:center"><input id="ms'+i+'" data-i="'+i+'" data-k="sys" type="checkbox"'+(m.sys?' checked':'')+' aria-label="ใช้ระบบกรอบ" style="width:auto;min-height:0"></td><td><input id="mf'+i+'" data-i="'+i+'" data-k="fold" type="number" min="0" step="1" value="'+(+m.fold||0)+'" aria-label="ขอบพับต่อด้าน" class="num" style="width:80px"></td><td><input id="mw'+i+'" data-i="'+i+'" data-k="waste" type="number" min="0" step="0.5" value="'+(+m.waste||0)+'" aria-label="เผื่อเศษ เปอร์เซ็นต์" class="num" style="width:80px"></td><td>'+(matDraft.length>1?'<button class="btn ghost" data-mdel="'+i+'">ลบ</button>':'')+'</td></tr>').join('');
 }
 $('matEdit').onclick=()=>{matDraft=S.materials.map(m=>({...m}));renderMatRows();$('matDlg').showModal()};
 $('matRows').addEventListener('input',e=>{const i=e.target.dataset.i,k=e.target.dataset.k;if(i==null)return;matDraft[i][k]=k==='sys'?e.target.checked:e.target.value});
@@ -1550,7 +1604,7 @@ $('matOk').onclick=()=>{
     const code=(m.code||'').trim().toUpperCase().replace(/\s+/g,'');
     if(!code){toast('ทุกวัสดุต้องมีรหัส');return}
     if(seen.has(code)){toast('รหัส '+code+' ซ้ำกัน');return}
-    seen.add(code);out.push({code,name:(m.name||'').trim()||code,color:m.color||'#888888',unit:['area','length','line'].includes(m.unit)?m.unit:'area',sys:!!m.sys,fold:Math.max(0,parseFloat(m.fold)||0)});
+    seen.add(code);out.push({code,name:(m.name||'').trim()||code,color:m.color||'#888888',unit:['area','length','line'].includes(m.unit)?m.unit:'area',sys:!!m.sys,fold:Math.max(0,parseFloat(m.fold)||0),waste:Math.max(0,parseFloat(m.waste)||0)});
   }
   const cur=curMat().code;S.materials=out;const k=out.findIndex(m=>m.code===cur);S.matIdx=k>=0?k:0;
   save('glassArea.materials',S.materials);save('glassArea.matIdx',S.matIdx);renderMat();recompute();$('matDlg').close();toast('บันทึกรายการวัสดุแล้ว');
@@ -1641,6 +1695,40 @@ $('projOpen').onchange=async e=>{
 };
 $('exportPng').onclick=()=>{draw();cv.toBlob(b=>{if(b)dl(b,(S.fileName||'drawing').replace(/\.[^.]+$/,'')+'-'+stamp()+'.png');else toast('ส่งออกภาพไม่ได้')},'image/png')};
 if(window.self!==window.top){$('projSave').hidden=true;$('exportPng').hidden=true}
+
+
+/* ================= สรุปทั้งโครงการ (รหัสต่อเนื่องทุกผนัง) ================= */
+function projectSummary(){
+  const tol=Math.max(0,parseFloat($('groupTol').value)||0),G=[],other=[];
+  for(const w of S.project)for(const r of w.rows){
+    const code=String(r.code||''),free=/-F\d/.test(code),minus=code.startsWith('−'),line=/-L\d/.test(code)||r.unit==='line';
+    if(free||minus){other.push({w,r,free,minus});continue}
+    const mat=r.mat||'GL',unit=r.unit||'area',H=line?0:r.h;
+    let g=G.find(g=>g.mat===mat&&g.unit===unit&&Math.abs(g.w-r.w)<=tol&&Math.abs(g.h-H)<=tol);
+    if(!g){g={mat,unit,line,w:r.w,h:H,qty:0,area:0,qtyW:0,walls:{}};G.push(g)}
+    g.qty+=r.qty;g.area+=r.area;g.qtyW+=(r.qtyW!=null?r.qtyW:r.area);g.walls[w.name]=(g.walls[w.name]||0)+r.qty;
+  }
+  const ord=m=>{const i=S.materials.findIndex(x=>x.code===m);return i<0?999:i};
+  G.sort((a,b)=>ord(a.mat)-ord(b.mat)||(b.w*(b.h||1))-(a.w*(a.h||1)));
+  const cnt={},rows=G.map(g=>{cnt[g.mat]=(cnt[g.mat]||0)+1;return{...g,code:g.mat+'-'+String(cnt[g.mat]).padStart(2,'0')}});
+  for(const o of other){const r=o.r;rows.push({code:o.minus?'หัก':r.mat+'-F',mat:r.mat||'GL',unit:r.unit||'area',w:r.w,h:r.h,qty:r.qty,area:r.area,qtyW:r.qtyW!=null?r.qtyW:r.area,walls:{[o.w.name]:r.qty},free:true})}
+  return rows;
+}
+let sumRows=[];
+$('projSum2').onclick=()=>{
+  if(!S.project.length)return toast('ยังไม่มีผนังในรายการ');
+  sumRows=projectSummary();
+  $('sumTable').innerHTML='<table><thead><tr><th>รหัสโครงการ</th><th>วัสดุ</th><th class="r">กว้าง × สูง (มม.)</th><th class="r">จำนวน</th><th class="r">ปริมาณ</th><th class="r">เผื่อเศษ</th><th>อยู่ในผนัง</th></tr></thead><tbody>'+
+    sumRows.map(r=>'<tr'+(r.free?' class="free"':'')+'><td><span class="chip" style="background:'+rgba(matBy(r.mat).color,.16)+';color:var(--fg)">'+esc(r.code)+'</span></td><td>'+esc(matBy(r.mat).name)+'</td><td class="r num">'+(r.line?'ยาว '+fmt(r.w,0):(r.free?'~':'')+fmt(r.w,0)+' × '+fmt(r.h,0))+'</td><td class="r num">'+r.qty+'</td><td class="r num">'+fmt(r.area,3)+' '+UNIT_TXT[r.unit]+'</td><td class="r num">'+fmt(r.qtyW,3)+'</td><td class="small">'+esc(Object.entries(r.walls).map(([k,v])=>k+' ×'+v).join(', '))+'</td></tr>').join('')+'</tbody></table>';
+  $('sumDlg').showModal();
+};
+$('sumClose').onclick=()=>$('sumDlg').close();
+$('showText').addEventListener('change',()=>redraw());
+$('sumCopy').onclick=()=>copyText(asTSV([['รหัสโครงการ','วัสดุ','กว้าง (มม.)','สูง (มม.)','จำนวน','ปริมาณ','หน่วย','ปริมาณเผื่อเศษ','อยู่ในผนัง'],...sumRows.map(r=>[r.code,r.mat,r.w.toFixed(1),r.line?'':r.h.toFixed(1),r.qty,r.area.toFixed(3),UNIT_TXT[r.unit],r.qtyW.toFixed(3),Object.entries(r.walls).map(([k,v])=>k+' x'+v).join(', ')])]));
+
+/* ================= เช็กความหนากระจก (โปรแกรม E1300) ================= */
+const CALC_URL='https://captainz168.github.io/glass-calc/GL300_new.html';
+function calcLink(r){const a=Math.min(r.w,r.h),b=Math.max(r.w,r.h);return CALC_URL+'?a='+Math.round(a)+'&b='+Math.round(b)+'&item='+encodeURIComponent(r.code)}
 
 /* ================= ลบและย้อนรูปที่วาด ================= */
 function removeShape(sh){
@@ -1786,7 +1874,7 @@ renderMat();
 $('selColor').addEventListener('input',e=>{curMat().color=e.target.value;save('glassArea.materials',S.materials);renderLayers();recompute()});
 $('minColor').addEventListener('input',e=>{S.minColor=e.target.value;save('glassArea.minColor',S.minColor);redraw()});
 loadDoc(sampleDXF(),'ตัวอย่าง.dxf');
-window.__glassTest={shapeEdges,showShape,loadDoc,pickSegment,renderDims,elevClick,elev:()=>elevRes,plan:()=>planRes,rowsOf,S,undo,computeElev,curMat,deleteDrawnAt,bulge3,rectPts,addDrawn,setRaster,toolClick,applyScale,finishDraft,setTool,dwgShapes,finishLoad,computeElev,computePlan,findRegion};
+window.__glassTest={projectSummary,shapeEdges,showShape,loadDoc,pickSegment,renderDims,elevClick,elev:()=>elevRes,plan:()=>planRes,rowsOf,S,undo,computeElev,curMat,deleteDrawnAt,bulge3,rectPts,addDrawn,setRaster,toolClick,applyScale,finishDraft,setTool,dwgShapes,finishLoad,computeElev,computePlan,findRegion};
 // เลือกแผงกระจกในตัวอย่างไว้ให้ดู
 (function(){const g=S.shapes.filter(s=>s.layer==='GLASS');for(const sh of g)S.sel.push(makeItem(sh.pts,sh,{sign:1,src:sh}));
   const p=S.shapes.findIndex(s=>s.layer==='GLASS-PLAN');if(p>=0)S.wall.push(p);recompute()})();
