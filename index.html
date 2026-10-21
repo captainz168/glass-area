@@ -115,7 +115,7 @@ dialog td{border:0;padding:4px}
 <header class="top">
   <div class="brand">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="1"></rect><path d="M12 3v18M3 9h18"></path></svg>
-    วัดพื้นที่กระจก
+    วัดพื้นที่กระจก <span class="muted small num" title="เวอร์ชัน">v1.5 · 21/10/2026</span>
   </div>
   <div class="seg tabs" role="group" aria-label="โหมด">
     <button id="tabElev" aria-pressed="true">รูปด้าน (แผงกระจก)</button>
@@ -145,6 +145,7 @@ dialog td{border:0;padding:4px}
     <div class="tools" id="toolsElev">
       <button class="btn" id="minusBtn" aria-pressed="false">− โหมดหักช่องเปิด</button>
       <button class="btn" id="clearSel">ล้างที่เลือก</button>
+      <button class="btn" id="exportPng" title="บันทึกภาพแบบในจอพร้อมรหัสแผ่น">ส่งออกภาพ</button>
       <label class="inline"><input type="checkbox" id="skipOuter" checked> ลากกรอบแล้วข้ามรูปที่ครอบรูปอื่น</label>
       <label class="inline" title="เช่น มือจับ อุปกรณ์ ที่อยู่ลอย ๆ ในแผ่น"><input type="checkbox" id="subIsl" checked> หักรูปที่ลอยอยู่ในแผ่น (มือจับ ฯลฯ)</label>
       <label class="inline" for="gapTol">ยอมให้เส้นห่าง
@@ -262,6 +263,8 @@ dialog td{border:0;padding:4px}
       <div class="tools">
         <button class="btn" id="projCopy">คัดลอกทั้งหมด</button>
         <button class="btn" id="projCsv">ดาวน์โหลด CSV</button>
+        <button class="btn" id="projSave">บันทึกโครงการ</button>
+        <label class="btn" for="projOpen">เปิดโครงการ</label><input type="file" id="projOpen" accept=".json,application/json" hidden>
         <button class="btn ghost" id="projClear">ล้างรายการ</button>
       </div>
       <p class="note">กด "คัดลอก" แล้ววางใน Google Sheets หรือ Excel ได้ทันที</p>
@@ -1614,6 +1617,30 @@ function drawShapeFocus(){
 $('eTable').addEventListener('click',e=>{const b=e.target.closest('[data-shape]');if(b)showShape(b.dataset.shape)});
 $('shapeClose').onclick=()=>{shapeFocus=null;$('shapeBox').hidden=true;redraw()};
 $('shapeCopy').onclick=()=>{const ed=S._shapeRows||[],f=S.unitF;if(!ed.length)return;copyText(asTSV([['ด้าน','ชนิด','ยาว (มม.)','R (มม.)','มุมที่จุดเริ่ม (องศา)'],...ed.map(e=>[e.from+'-'+e.to,e.arc?'โค้ง':'ตรง',(e.len*f).toFixed(1),e.arc?(e.R*f).toFixed(0):'',e.tangent?'ต่อโค้ง':e.ang.toFixed(1)])]))};
+
+
+/* ================= ดาวน์โหลด / บันทึกโครงการ / ส่งออกภาพ ================= */
+function dl(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},800)}
+const stamp=()=>new Date().toISOString().slice(0,10);
+$('projSave').onclick=()=>{
+  if(!S.project.length)return toast('ยังไม่มีผนังในรายการ');
+  const data={app:'glass-area',v:1,saved:new Date().toISOString(),project:S.project,materials:S.materials,systems:S.systems};
+  dl(new Blob([JSON.stringify(data,null,1)],{type:'application/json'}),'glass-project-'+stamp()+'.json');
+};
+$('projOpen').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{
+    const d=JSON.parse(await f.text());
+    if(d.app!=='glass-area'||!Array.isArray(d.project))throw new Error('ไม่ใช่ไฟล์โครงการของเครื่องมือนี้');
+    S.project=d.project;
+    if(Array.isArray(d.materials)&&d.materials.length){S.materials=d.materials;S.matIdx=0;save('glassArea.materials',S.materials);renderMat()}
+    if(Array.isArray(d.systems)&&d.systems.length){S.systems=d.systems;S.sysIdx=0;save('glassArea.systems',S.systems);renderSys()}
+    save('glassArea.project',S.project);renderProject();recompute();
+    toast('เปิดโครงการแล้ว: '+S.project.length+' ผนัง (แทนรายการเดิม)');
+  }catch(x){toast('เปิดไฟล์โครงการไม่ได้: '+x.message)}
+};
+$('exportPng').onclick=()=>{draw();cv.toBlob(b=>{if(b)dl(b,(S.fileName||'drawing').replace(/\.[^.]+$/,'')+'-'+stamp()+'.png');else toast('ส่งออกภาพไม่ได้')},'image/png')};
+if(window.self!==window.top){$('projSave').hidden=true;$('exportPng').hidden=true}
 
 /* ================= ลบและย้อนรูปที่วาด ================= */
 function removeShape(sh){
